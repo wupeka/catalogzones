@@ -185,40 +185,7 @@ please see http://xml.resource.org/authoring/README.html. -->
 
 	<t>TBD: Transitive catalogs</t>
       </section>
-
-      <section title="Resource record fields">
-	<t>A catalog zone contains various resource records (RRs). They
-	have NAME, TYPE, CLASS, TTL, RDLENGTH and RDATA as fields <xref
-	target="RFC1035" />.</t>
-
-	<t>The NAME field contains the owner name of the respective
-	RR. As with all DNS zones, the owner name must be a child of the
-	catalog zone name.</t>
-
-	<t>The TYPE field depends on the type of catalog zone property
-	value being represented. <xref target="sec-types" /> describes
-	how various zone property value types are represented.</t>
-
-	<t>The CLASS field of the RR MUST be set to IN(1) <xref
-	target="RFC1035" />. This is because some RR TYPEs such as APL
-	used by catalog zones are defined only for the IN CLASS.</t>
-
-	<t>The TTL field's value is not specially defined by this
-	memo. Catalog zones are for nameserver management only and are
-	not intended for general querying.  Operators should use
-	whatever value seems convenient for any management applications
-	that may query the catalog zone.</t>
-
-	<t>The RDLENGTH field contains the length of the RDATA
-	field.</t>
-
-	<t>The content of the RDATA field depends on the type of catalog
-	zone property value being represented. <xref target="sec-types"
-	/> describes how various zone property value types are
-	represented.</t>
-      </section>
-
-      <section title="SOA and NS records at apex">
+      <section title="Structure">
 	<t>Similar to any other DNS zone, a catalog zone would be
 	expected to have a syntactically correct SOA record and one or
 	more NS records at its apex.</t>
@@ -245,6 +212,40 @@ please see http://xml.resource.org/authoring/README.html. -->
 	target="RFC1035" /> and they MUST be ignored. A single NS RR
 	with an NSDNAME field containing the absolute name "invalid."
 	is recommended <xref target="RFC2606" />.</t>
+        <t>Catalog zone stores global properties that apply to all the
+        member zones and list of member zones that can have their own
+        sets of custom properties.</t>
+        <t>The list of zones is stored in 'zones' subtree in the catalog
+        zone namespace. Each zone is represented as a PTR entry with
+        NAME set to unique label and RDATA entry set to the name of the
+        member zone. The unique label SHOULD be hex representation of 
+        SHA256 hash of member zone name in wire format. This guarantees
+        that there will be no conflict between member zones and also
+        provides addresability of the member zones and interoperability 
+        between implementations:</t>
+     	  <figure>
+	    <artwork>
+        398ba44a124458f8df6fbaf4bfa9b5384e54f331.zones.catalog. 3600 IN PTR "domain.example.org"
+	    </artwork>
+	  </figure>
+        <t>Global properties that apply to all the member zones are 
+        stored as single label nodes under the catalog zone, eg:</t>
+	  <figure>
+	    <artwork>
+        allow-query.catalog. 3600 IN APL 10.0.0.0/8
+	    </artwork>
+	  </figure>
+        <t>Most of the properties can be also set for single member zones,
+        those should be located under the member zone specific subtree:</t>
+     	  <figure>
+	    <artwork>
+        allow-query.398ba44a124458f8df6fbaf4bfa9b5384e54f331.zones.catalog. 3600 IN APL 10.0.0.0/8
+	    </artwork>
+	  </figure>
+	<t>Unless stated otherwise for a specific option or specifically
+	overriden the order of processing starts with local (per-member 
+	zone) option, then global option, then configuration set in nameserver
+	configuration.</t>
       </section>
 
       <section title="Zone properties map and owner names" anchor="sec-map">
